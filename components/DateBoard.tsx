@@ -1045,19 +1045,6 @@ function EventTypeBadge({ type }: { type: EventType }) {
   return <span className={`event-type-chip event-type-${type}`}>{EVENT_TYPE_LABELS[type]}</span>;
 }
 
-function formatDate(iso: string): string {
-  try {
-    return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, {
-      weekday: 'short',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  } catch {
-    return iso;
-  }
-}
-
 function formatIsoDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
