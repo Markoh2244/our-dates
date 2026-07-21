@@ -17,6 +17,7 @@ import {
   uploadCloudPhoto,
 } from '@/lib/cloud';
 import { exportDates, importDates, resetToDefaults, saveDates } from '@/lib/storage';
+import { compareEventsBySchedule, formatEventSchedule, formatTimeRange } from '@/lib/time-format';
 import { CrossIcon, IchthysIcon } from './ChristianIcons';
 import { ScriptureBanner } from './ScriptureBanner';
 
@@ -49,6 +50,9 @@ type DateFormState = {
   livNote: string;
   markoNote: string;
   plannedFor: string;
+  startTime: string;
+  endTime: string;
+  timezone: string;
   imageDataUrl: string;
   imageName: string;
 };
@@ -63,6 +67,9 @@ const emptyForm = (): DateFormState => ({
   livNote: '',
   markoNote: '',
   plannedFor: '',
+  startTime: '',
+  endTime: '',
+  timezone: 'EST',
   imageDataUrl: '',
   imageName: '',
 });
@@ -179,6 +186,9 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
       current.push(item);
       map.set(key, current);
     });
+    map.forEach((items, key) => {
+      map.set(key, [...items].sort(compareEventsBySchedule));
+    });
     return map;
   }, [filtered]);
 
@@ -191,7 +201,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
         const date = new Date(`${item.plannedFor}T12:00:00`);
         return date.getFullYear() === year && date.getMonth() === month;
       })
-      .sort((a, b) => (a.plannedFor ?? '').localeCompare(b.plannedFor ?? ''));
+      .sort(compareEventsBySchedule);
   }, [filtered, monthCursor]);
 
   const unscheduled = useMemo(
@@ -243,6 +253,9 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
       livNote: date.livNote ?? '',
       markoNote: date.markoNote ?? '',
       plannedFor: date.plannedFor ?? '',
+      startTime: date.startTime ?? '',
+      endTime: date.endTime ?? '',
+      timezone: date.timezone ?? 'EST',
       imageDataUrl: date.imageDataUrl ?? '',
       imageName: date.imageName ?? '',
     });
@@ -265,6 +278,9 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
       livNote: optionalText(form.livNote),
       markoNote: optionalText(form.markoNote),
       plannedFor: optionalText(form.plannedFor),
+      startTime: optionalText(form.startTime),
+      endTime: optionalText(form.endTime),
+      timezone: optionalText(form.timezone) ?? 'EST',
       imageDataUrl: optionalText(form.imageDataUrl),
       imageName: optionalText(form.imageName),
     };
@@ -578,6 +594,42 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
                 />
               </label>
 
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-ink">Start time</span>
+                <input
+                  type="time"
+                  value={form.startTime}
+                  onChange={(e) => setForm((prev) => ({ ...prev, startTime: e.target.value }))}
+                  className="input"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-ink">End time</span>
+                <input
+                  type="time"
+                  value={form.endTime}
+                  onChange={(e) => setForm((prev) => ({ ...prev, endTime: e.target.value }))}
+                  className="input"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-ink">Timezone</span>
+                <select
+                  value={form.timezone}
+                  onChange={(e) => setForm((prev) => ({ ...prev, timezone: e.target.value }))}
+                  className="input"
+                >
+                  <option value="EST">EST</option>
+                  <option value="EDT">EDT</option>
+                  <option value="CST">CST</option>
+                  <option value="MST">MST</option>
+                  <option value="PST">PST</option>
+                  <option value="UTC">UTC</option>
+                </select>
+              </label>
+
               <label className="block sm:col-span-2">
                 <span className="mb-1 block text-sm font-medium text-ink">Address</span>
                 <input
@@ -738,17 +790,27 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
                         )}
                       </div>
                       <div className="calendar-day__events">
-                        {dayEvents.slice(0, 3).map((event) => (
+                        {dayEvents.slice(0, 3).map((event) => {
+                          const timeLabel = formatTimeRange(
+                            event.startTime,
+                            event.endTime,
+                            event.timezone
+                          );
+                          return (
                           <button
                             type="button"
                             key={event.id}
                             className={`calendar-event event-type-${event.eventType}`}
                             onClick={() => openEditForm(event)}
-                            title={`${event.title} (${EVENT_TYPE_LABELS[event.eventType]})`}
+                            title={`${event.title}${timeLabel ? ` · ${timeLabel}` : ''} (${EVENT_TYPE_LABELS[event.eventType]})`}
                           >
-                            {event.title}
+                            <span className="calendar-event__title">{event.title}</span>
+                            {timeLabel && (
+                              <span className="calendar-event__time">{timeLabel}</span>
+                            )}
                           </button>
-                        ))}
+                          );
+                        })}
                         {dayEvents.length > 3 && (
                           <span className="calendar-more">+{dayEvents.length - 3} more</span>
                         )}
@@ -849,8 +911,8 @@ function EventCard({
 
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <EventTypeBadge type={event.eventType} />
-        {event.plannedFor && (
-          <span className="season-badge py-1!">{formatDate(event.plannedFor)}</span>
+        {formatEventSchedule(event) && (
+          <span className="season-badge py-1!">{formatEventSchedule(event)}</span>
         )}
       </div>
 

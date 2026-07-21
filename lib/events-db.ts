@@ -14,6 +14,9 @@ type EventRow = {
   image_url: string | null;
   image_name: string | null;
   planned_for: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  timezone: string | null;
 };
 
 function toIdea(row: EventRow): DateIdea {
@@ -30,6 +33,9 @@ function toIdea(row: EventRow): DateIdea {
     imageDataUrl: row.image_url ?? undefined,
     imageName: row.image_name ?? undefined,
     plannedFor: row.planned_for ?? undefined,
+    startTime: row.start_time ?? undefined,
+    endTime: row.end_time ?? undefined,
+    timezone: row.timezone ?? undefined,
   };
 }
 
@@ -47,6 +53,9 @@ function toRow(idea: DateIdea): EventRow {
     image_url: idea.imageDataUrl ?? null,
     image_name: idea.imageName ?? null,
     planned_for: idea.plannedFor ?? null,
+    start_time: idea.startTime ?? null,
+    end_time: idea.endTime ?? null,
+    timezone: idea.timezone ?? 'EST',
   };
 }
 

@@ -26,6 +26,12 @@ export interface DateIdea {
   imageDataUrl?: string;
   imageName?: string;
   plannedFor?: string;
+  /** 24-hour time, e.g. "12:24" */
+  startTime?: string;
+  /** 24-hour time, e.g. "18:34" */
+  endTime?: string;
+  /** Short timezone label shown in the UI, e.g. "EST" */
+  timezone?: string;
 }
 
 export const SEASON_LABELS: Record<Season, string> = {

@@ -9,6 +9,34 @@ function unauthorized() {
   return NextResponse.json({ error: 'Invalid access code' }, { status: 401 });
 }
 
+function upgradeKnownEvents(events: DateIdea[]): { events: DateIdea[]; changed: boolean } {
+  let changed = false;
+
+  const upgraded = events.map((event) => {
+    const seed = DEFAULT_DATES.find((item) => item.id === event.id);
+    if (!seed) return event;
+
+    const next = {
+      ...event,
+      startTime: event.startTime ?? seed.startTime,
+      endTime: event.endTime ?? seed.endTime,
+      timezone: event.timezone ?? seed.timezone,
+    };
+
+    if (
+      next.startTime !== event.startTime ||
+      next.endTime !== event.endTime ||
+      next.timezone !== event.timezone
+    ) {
+      changed = true;
+    }
+
+    return next;
+  });
+
+  return { events: upgraded, changed };
+}
+
 export async function GET(request: NextRequest) {
   if (!isCloudConfigured()) {
     return NextResponse.json({
@@ -27,6 +55,13 @@ export async function GET(request: NextRequest) {
     // First-time setup: seed our hardcoded timeline once
     if (events.length === 0) {
       events = await replaceAllEvents(DEFAULT_DATES);
+    } else {
+      const upgraded = upgradeKnownEvents(events);
+      if (upgraded.changed) {
+        events = await replaceAllEvents(upgraded.events);
+      } else {
+        events = upgraded.events;
+      }
     }
 
     return NextResponse.json({ cloudEnabled: true, events });

@@ -16,6 +16,9 @@ create table if not exists public.events (
   image_url text,
   image_name text,
   planned_for date,
+  start_time text,
+  end_time text,
+  timezone text not null default 'EST',
   updated_at timestamptz not null default now()
 );
 
