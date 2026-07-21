@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCloudConfigured, verifyAccessCode } from '@/lib/supabase-server';
+import { isCalendarAuthConfigured } from '@/lib/calendar-auth';
 
 function getConfigStatus() {
   const url = Boolean(
@@ -10,9 +11,9 @@ function getConfigStatus() {
       process.env.SUPABASE_SERVICE_KEY ||
       process.env.SUPABASE_SECRET_KEY
   );
-  const accessCode = Boolean(process.env.CALENDAR_ACCESS_CODE);
+  const shareToken = isCalendarAuthConfigured();
 
-  return { url, serviceKey, accessCode };
+  return { url, serviceKey, shareToken };
 }
 
 export async function GET() {
@@ -24,8 +25,9 @@ export async function GET() {
     missing: [
       !configured.url && 'NEXT_PUBLIC_SUPABASE_URL',
       !configured.serviceKey && 'SUPABASE_SERVICE_ROLE_KEY',
-      !configured.accessCode && 'CALENDAR_ACCESS_CODE',
+      !configured.shareToken && 'CALENDAR_SHARE_TOKEN',
     ].filter(Boolean),
+    sharePathConfigured: configured.shareToken,
   });
 }
 
@@ -34,7 +36,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, cloudEnabled: false }, { status: 503 });
   }
 
-  const body = (await request.json()) as { accessCode?: string };
-  const ok = verifyAccessCode(body.accessCode);
+  const body = (await request.json()) as { accessCode?: string; shareToken?: string };
+  const token = body.shareToken ?? body.accessCode ?? null;
+  const ok = verifyAccessCode(token);
   return NextResponse.json({ ok, cloudEnabled: true }, { status: ok ? 200 : 401 });
 }

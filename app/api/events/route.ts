@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCloudConfigured, verifyAccessCode } from '@/lib/supabase-server';
+import { getTokenFromRequest } from '@/lib/calendar-auth';
 import { listEvents, replaceAllEvents } from '@/lib/events-db';
 import { DEFAULT_DATES } from '@/lib/default-dates';
 import { DateIdea } from '@/lib/types';
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const code = request.headers.get('x-access-code');
+  const code = getTokenFromRequest(request);
   if (!verifyAccessCode(code)) return unauthorized();
 
   try {
@@ -40,7 +41,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Cloud storage is not configured' }, { status: 503 });
   }
 
-  const code = request.headers.get('x-access-code');
+  const code = getTokenFromRequest(request);
   if (!verifyAccessCode(code)) return unauthorized();
 
   try {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCloudConfigured, verifyAccessCode } from '@/lib/supabase-server';
+import { getTokenFromRequest } from '@/lib/calendar-auth';
 import { uploadEventPhoto, upsertEvent, listEvents } from '@/lib/events-db';
 import { DateIdea } from '@/lib/types';
 
@@ -11,7 +12,7 @@ export async function POST(
     return NextResponse.json({ error: 'Cloud storage is not configured' }, { status: 503 });
   }
 
-  const code = request.headers.get('x-access-code');
+  const code = getTokenFromRequest(request);
   if (!verifyAccessCode(code)) {
     return NextResponse.json({ error: 'Invalid access code' }, { status: 401 });
   }

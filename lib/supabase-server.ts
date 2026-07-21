@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { isCalendarAuthConfigured } from './calendar-auth';
 
 function getSupabaseUrl(): string | undefined {
   return process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
@@ -13,7 +14,7 @@ function getServiceRoleKey(): string | undefined {
 }
 
 export function isCloudConfigured(): boolean {
-  return Boolean(getSupabaseUrl() && getServiceRoleKey() && process.env.CALENDAR_ACCESS_CODE);
+  return Boolean(getSupabaseUrl() && getServiceRoleKey() && isCalendarAuthConfigured());
 }
 
 export function getServiceSupabase(): SupabaseClient {
@@ -29,8 +30,4 @@ export function getServiceSupabase(): SupabaseClient {
   });
 }
 
-export function verifyAccessCode(provided: string | null | undefined): boolean {
-  const expected = process.env.CALENDAR_ACCESS_CODE;
-  if (!expected) return false;
-  return Boolean(provided && provided === expected);
-}
+export { verifyCalendarToken as verifyAccessCode } from './calendar-auth';

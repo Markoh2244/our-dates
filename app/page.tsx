@@ -1,5 +1,6 @@
-import { DateBoard } from '@/components/DateBoard';
+import { notFound } from 'next/navigation';
 
+/** Root URL is private — the calendar lives at /c/{secret-token} only. */
 export default function Home() {
-  return <DateBoard />;
+  notFound();
 }

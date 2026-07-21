@@ -12,12 +12,8 @@ import {
   STATUS_LABELS,
 } from '@/lib/types';
 import {
-  clearStoredAccessCode,
-  fetchCloudEvents,
-  getStoredAccessCode,
   hydrateCalendar,
   saveCloudEvents,
-  unlockCloud,
   uploadCloudPhoto,
 } from '@/lib/cloud';
 import { exportDates, importDates, resetToDefaults, saveDates } from '@/lib/storage';
@@ -71,7 +67,7 @@ const emptyForm = (): DateFormState => ({
   imageName: '',
 });
 
-export function DateBoard() {
+export function DateBoard({ shareToken }: { shareToken: string }) {
   const [dates, setDates] = useState<DateIdea[]>([]);
   const [ready, setReady] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -83,7 +79,6 @@ export function DateBoard() {
   const [form, setForm] = useState<DateFormState>(emptyForm());
   const [cloudEnabled, setCloudEnabled] = useState(false);
   const [cloudUnlocked, setCloudUnlocked] = useState(false);
-  const [accessCodeInput, setAccessCodeInput] = useState('');
   const [syncMessage, setSyncMessage] = useState('');
   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
@@ -98,13 +93,12 @@ export function DateBoard() {
     let cancelled = false;
 
     (async () => {
-      const hydrated = await hydrateCalendar();
+      const hydrated = await hydrateCalendar(shareToken);
       if (cancelled) return;
 
       setDates(hydrated.events);
       setCloudEnabled(hydrated.cloudEnabled);
       setCloudUnlocked(hydrated.cloudUnlocked);
-      setAccessCodeInput(getStoredAccessCode());
 
       const nextDate = hydrated.events
         .filter((item) => item.plannedFor)
@@ -117,17 +111,17 @@ export function DateBoard() {
       setReady(true);
       setSyncMessage(
         hydrated.cloudUnlocked
-          ? 'Cloud sync is on — our calendar persists for Liv and Marko.'
+          ? 'Our calendar syncs across devices.'
           : hydrated.cloudEnabled
-            ? 'Cloud is ready. Enter our shared access code to unlock persistence.'
-            : 'Saving on this device only until we connect free cloud storage.'
+            ? 'Cloud storage is ready but could not load. Try refreshing.'
+            : 'Saving on this device until cloud storage is fully configured.'
       );
     })();
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [shareToken]);
 
   useEffect(() => {
     if (!ready) return;
@@ -139,12 +133,9 @@ export function DateBoard() {
       return;
     }
 
-    const code = getStoredAccessCode();
-    if (!code) return;
-
     const timer = window.setTimeout(async () => {
       try {
-        await saveCloudEvents(code, dates);
+        await saveCloudEvents(shareToken, dates);
         setSyncMessage('Saved to the cloud.');
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Cloud save failed';
@@ -153,7 +144,7 @@ export function DateBoard() {
     }, 700);
 
     return () => window.clearTimeout(timer);
-  }, [dates, ready, cloudUnlocked]);
+  }, [dates, ready, cloudUnlocked, shareToken]);
 
   const filtered = useMemo(() => {
     return dates.filter((d) => {
@@ -258,32 +249,6 @@ export function DateBoard() {
     setShowForm(true);
   };
 
-  const handleUnlockCloud = async () => {
-    const ok = await unlockCloud(accessCodeInput.trim());
-    if (!ok) {
-      setSyncMessage('That access code did not work.');
-      return;
-    }
-
-    try {
-      skipNextCloudSave.current = true;
-      const events = await fetchCloudEvents(accessCodeInput.trim());
-      setDates(events);
-      saveDates(events);
-      setCloudUnlocked(true);
-      setSyncMessage('Cloud unlocked. Our calendar will sync across devices.');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not unlock cloud';
-      setSyncMessage(message);
-    }
-  };
-
-  const handleLockCloud = () => {
-    clearStoredAccessCode();
-    setCloudUnlocked(false);
-    setSyncMessage('Cloud locked on this device. Local edits still save here.');
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return;
@@ -315,10 +280,9 @@ export function DateBoard() {
     if (cloudUnlocked && pendingPhotoFile) {
       try {
         setSavingImage(true);
-        const code = getStoredAccessCode();
         skipNextCloudSave.current = true;
-        await saveCloudEvents(code, nextDates);
-        payload = await uploadCloudPhoto(code, eventId, pendingPhotoFile);
+        await saveCloudEvents(shareToken, nextDates);
+        payload = await uploadCloudPhoto(shareToken, eventId, pendingPhotoFile);
         nextDates = nextDates.map((d) => (d.id === eventId ? payload : d));
         setSyncMessage('Photo saved securely in the cloud.');
       } catch (error) {
@@ -449,31 +413,8 @@ export function DateBoard() {
             <StatPill label="Photos" value={stats.withPhotos} />
           </div>
 
-          {cloudEnabled && (
-            <div className="mx-auto mt-5 max-w-md panel p-3">
-              {!cloudUnlocked ? (
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  <input
-                    type="password"
-                    value={accessCodeInput}
-                    onChange={(e) => setAccessCodeInput(e.target.value)}
-                    className="input max-w-[220px]"
-                    placeholder="Shared access code"
-                  />
-                  <button type="button" className="btn-primary" onClick={handleUnlockCloud}>
-                    Unlock cloud
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  <span className="text-sm text-muted">Cloud sync is on</span>
-                  <button type="button" className="btn-small" onClick={handleLockCloud}>
-                    Lock
-                  </button>
-                </div>
-              )}
-              {syncMessage && <p className="mt-2 text-xs text-muted">{syncMessage}</p>}
-            </div>
+          {cloudEnabled && cloudUnlocked && syncMessage && (
+            <p className="mx-auto mt-4 max-w-xl text-xs text-muted">{syncMessage}</p>
           )}
           {!cloudEnabled && (
             <p className="mx-auto mt-4 max-w-xl text-xs text-muted">

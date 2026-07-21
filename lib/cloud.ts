@@ -1,21 +1,6 @@
 import { DateIdea } from './types';
 import { loadDates as loadLocal, saveDates as saveLocal } from './storage';
 
-const ACCESS_KEY = 'our-dates-access-code';
-
-export function getStoredAccessCode(): string {
-  if (typeof window === 'undefined') return '';
-  return localStorage.getItem(ACCESS_KEY) || '';
-}
-
-export function setStoredAccessCode(code: string): void {
-  localStorage.setItem(ACCESS_KEY, code);
-}
-
-export function clearStoredAccessCode(): void {
-  localStorage.removeItem(ACCESS_KEY);
-}
-
 export async function checkCloudEnabled(): Promise<boolean> {
   try {
     const res = await fetch('/api/cloud');
@@ -26,20 +11,13 @@ export async function checkCloudEnabled(): Promise<boolean> {
   }
 }
 
-export async function unlockCloud(accessCode: string): Promise<boolean> {
-  const res = await fetch('/api/cloud', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ accessCode }),
-  });
-  if (!res.ok) return false;
-  setStoredAccessCode(accessCode);
-  return true;
+function authHeaders(shareToken: string): HeadersInit {
+  return { 'x-calendar-token': shareToken };
 }
 
-export async function fetchCloudEvents(accessCode: string): Promise<DateIdea[]> {
+export async function fetchCloudEvents(shareToken: string): Promise<DateIdea[]> {
   const res = await fetch('/api/events', {
-    headers: { 'x-access-code': accessCode },
+    headers: authHeaders(shareToken),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Could not load cloud calendar');
@@ -47,11 +25,9 @@ export async function fetchCloudEvents(accessCode: string): Promise<DateIdea[]> 
 }
 
 export async function saveCloudEvents(
-  accessCode: string,
+  shareToken: string,
   events: DateIdea[]
 ): Promise<DateIdea[]> {
-  // Keep https image URLs; strip local base64 so we stay under free-tier limits.
-  // New photos should be uploaded through uploadCloudPhoto().
   const payload = events.map((event) => ({
     ...event,
     imageDataUrl:
@@ -64,7 +40,7 @@ export async function saveCloudEvents(
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      'x-access-code': accessCode,
+      ...authHeaders(shareToken),
     },
     body: JSON.stringify({ events: payload }),
   });
@@ -74,7 +50,7 @@ export async function saveCloudEvents(
 }
 
 export async function uploadCloudPhoto(
-  accessCode: string,
+  shareToken: string,
   eventId: string,
   file: File
 ): Promise<DateIdea> {
@@ -83,7 +59,7 @@ export async function uploadCloudPhoto(
 
   const res = await fetch(`/api/events/${eventId}/photo`, {
     method: 'POST',
-    headers: { 'x-access-code': accessCode },
+    headers: authHeaders(shareToken),
     body: form,
   });
   const data = await res.json();
@@ -91,22 +67,21 @@ export async function uploadCloudPhoto(
   return data.event as DateIdea;
 }
 
-/** Prefer cloud when unlocked; otherwise fall back to local browser storage. */
-export async function hydrateCalendar(): Promise<{
+/** Load calendar from cloud when visiting the secret link. */
+export async function hydrateCalendar(shareToken: string): Promise<{
   events: DateIdea[];
   cloudEnabled: boolean;
   cloudUnlocked: boolean;
 }> {
   const cloudEnabled = await checkCloudEnabled();
-  const accessCode = getStoredAccessCode();
 
-  if (cloudEnabled && accessCode) {
+  if (cloudEnabled && shareToken) {
     try {
-      const events = await fetchCloudEvents(accessCode);
+      const events = await fetchCloudEvents(shareToken);
       saveLocal(events);
       return { events, cloudEnabled, cloudUnlocked: true };
     } catch {
-      clearStoredAccessCode();
+      return { events: loadLocal(), cloudEnabled, cloudUnlocked: false };
     }
   }
 

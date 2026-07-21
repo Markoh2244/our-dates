@@ -11,7 +11,7 @@ Vercel project: `our-dates` → https://our-dates-drab.vercel.app
 - Migration files live in `supabase/migrations/` (Supabase applies these on push to `main`).
 - Vercel env vars added:
   - `NEXT_PUBLIC_SUPABASE_URL`
-  - `CALENDAR_ACCESS_CODE` = `liv-and-marko` (change in Vercel if you prefer)
+  - `CALENDAR_SHARE_TOKEN` — long secret for the private link (see below)
 
 ## Finish in Supabase (2 minutes)
 
@@ -50,7 +50,9 @@ Or push any commit to `main` (GitHub auto-deploy).
 1. Open https://our-dates-drab.vercel.app/api/cloud  
    Should return `"cloudEnabled": true` and empty `missing` array.
 
-2. On the site, enter access code **`liv-and-marko`** → **Unlock cloud**.
+2. On the site, open your private link (no password needed):
+
+   `https://our-dates-drab.vercel.app/c/{CALENDAR_SHARE_TOKEN}`
 
 3. In Supabase → **Table Editor → events** — you should see 9 seeded timeline events after first unlock.
 
