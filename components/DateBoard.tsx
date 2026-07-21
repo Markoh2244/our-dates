@@ -83,6 +83,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
+  const [savingEvent, setSavingEvent] = useState(false);
   const [form, setForm] = useState<DateFormState>(emptyForm());
   const [cloudEnabled, setCloudEnabled] = useState(false);
   const [cloudUnlocked, setCloudUnlocked] = useState(false);
@@ -129,6 +130,24 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
       cancelled = true;
     };
   }, [shareToken]);
+
+  const persistToCloud = async (
+    nextDates: DateIdea[],
+    message = 'Saved to Supabase.'
+  ): Promise<DateIdea[]> => {
+    saveDates(nextDates);
+
+    if (!cloudUnlocked) {
+      setSyncMessage('Saved on this device only — cloud storage is not active yet.');
+      return nextDates;
+    }
+
+    skipNextCloudSave.current = true;
+    const saved = await saveCloudEvents(shareToken, nextDates);
+    setSyncMessage(message);
+    saveDates(saved);
+    return saved;
+  };
 
   useEffect(() => {
     if (!ready) return;
@@ -264,7 +283,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title.trim()) return;
+    if (!form.title.trim() || savingEvent) return;
 
     const eventId = editingId ?? crypto.randomUUID();
     let payload: DateIdea = {
@@ -292,28 +311,33 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
       nextDates = [payload, ...dates];
     }
 
-    // Persist event first, then upload photo to free cloud storage if needed.
-    if (cloudUnlocked && pendingPhotoFile) {
-      try {
-        setSavingImage(true);
+    setSavingEvent(true);
+    try {
+      if (cloudUnlocked && pendingPhotoFile) {
         skipNextCloudSave.current = true;
         await saveCloudEvents(shareToken, nextDates);
         payload = await uploadCloudPhoto(shareToken, eventId, pendingPhotoFile);
         nextDates = nextDates.map((d) => (d.id === eventId ? payload : d));
-        setSyncMessage('Photo saved securely in the cloud.');
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Photo upload failed';
-        setSyncMessage(message);
-      } finally {
-        setSavingImage(false);
+        saveDates(nextDates);
+        setSyncMessage('Event and photo saved to Supabase.');
+      } else {
+        nextDates = await persistToCloud(
+          nextDates,
+          editingId ? 'Event updated in Supabase.' : 'Event added to Supabase.'
+        );
       }
-    }
 
-    setDates(nextDates);
-    setShowForm(false);
-    setEditingId(null);
-    setPendingPhotoFile(null);
-    setForm(emptyForm());
+      setDates(nextDates);
+      setShowForm(false);
+      setEditingId(null);
+      setPendingPhotoFile(null);
+      setForm(emptyForm());
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not save event';
+      setSyncMessage(message);
+    } finally {
+      setSavingEvent(false);
+    }
   };
 
   const handleImageUpload = async (file: File) => {
@@ -333,9 +357,20 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Remove this event from our calendar?')) return;
-    setDates((prev) => prev.filter((d) => d.id !== id));
+
+    const nextDates = dates.filter((d) => d.id !== id);
+    setSavingEvent(true);
+    try {
+      const saved = await persistToCloud(nextDates, 'Event removed from Supabase.');
+      setDates(saved);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not delete event';
+      setSyncMessage(message);
+    } finally {
+      setSavingEvent(false);
+    }
   };
 
   const handleStatusChange = (id: string, status: DateStatus) => {
@@ -361,17 +396,27 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
     try {
       const text = await file.text();
       const imported = importDates(text);
-      setDates(imported);
+      const saved = await persistToCloud(imported, 'Calendar imported to Supabase.');
+      setDates(saved);
       alert('Calendar imported successfully.');
     } catch {
       alert('Could not import that file. Please use a valid JSON export.');
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (!confirm('Reset to the hardcoded timeline? This removes our edits.')) return;
-    skipNextCloudSave.current = !cloudUnlocked;
-    setDates(resetToDefaults());
+    const defaults = resetToDefaults();
+    setSavingEvent(true);
+    try {
+      const saved = await persistToCloud(defaults, 'Timeline reset in Supabase.');
+      setDates(saved);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not reset timeline';
+      setSyncMessage(message);
+    } finally {
+      setSavingEvent(false);
+    }
   };
 
   if (!ready) {
@@ -431,6 +476,13 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
 
           {cloudEnabled && cloudUnlocked && syncMessage && (
             <p className="mx-auto mt-4 max-w-xl text-xs text-muted">{syncMessage}</p>
+          )}
+          {cloudEnabled && !cloudUnlocked && (
+            <p className="mx-auto mt-4 max-w-xl text-xs text-muted">
+              Cloud storage is not fully connected yet. Add{' '}
+              <code className="rounded bg-white/70 px-1 py-0.5">SUPABASE_SERVICE_ROLE_KEY</code>{' '}
+              in Vercel so edits and photos save to the database.
+            </p>
           )}
           {!cloudEnabled && (
             <p className="mx-auto mt-4 max-w-xl text-xs text-muted">
@@ -708,8 +760,12 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
             </div>
 
             <div className="mt-5 flex gap-3">
-              <button type="submit" className="btn-primary">
-                {editingId ? 'Save changes' : 'Add event'}
+              <button type="submit" className="btn-primary" disabled={savingEvent || savingImage}>
+                {savingEvent || savingImage
+                  ? 'Saving…'
+                  : editingId
+                    ? 'Save changes'
+                    : 'Add event'}
               </button>
               <button
                 type="button"
