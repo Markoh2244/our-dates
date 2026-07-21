@@ -7,9 +7,9 @@ function getConfigStatus() {
     process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
   );
   const serviceKey = Boolean(
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.SUPABASE_SERVICE_KEY ||
-      process.env.SUPABASE_SECRET_KEY
+    process.env.SUPABASE_SECRET_KEY ||
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.SUPABASE_SERVICE_KEY
   );
   const shareToken = isCalendarAuthConfigured();
 
@@ -24,7 +24,7 @@ export async function GET() {
     configured,
     missing: [
       !configured.url && 'NEXT_PUBLIC_SUPABASE_URL',
-      !configured.serviceKey && 'SUPABASE_SERVICE_ROLE_KEY',
+      !configured.serviceKey && 'SUPABASE_SECRET_KEY',
       !configured.shareToken && 'CALENDAR_SHARE_TOKEN',
     ].filter(Boolean),
     sharePathConfigured: configured.shareToken,

@@ -474,9 +474,10 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
           )}
           {cloudEnabled && !cloudUnlocked && (
             <p className="mx-auto mt-4 max-w-xl text-xs text-muted">
-              Cloud storage is not fully connected yet. Add{' '}
-              <code className="rounded bg-white/70 px-1 py-0.5">SUPABASE_SERVICE_ROLE_KEY</code>{' '}
-              in Vercel so edits and photos save to the database.
+              Cloud storage is not fully connected yet. Add your Supabase{' '}
+              <code className="rounded bg-white/70 px-1 py-0.5">secret key</code>{' '}
+              (<code className="rounded bg-white/70 px-1 py-0.5">SUPABASE_SECRET_KEY</code> in
+              Vercel) so edits and photos save to the database.
             </p>
           )}
           {!cloudEnabled && (

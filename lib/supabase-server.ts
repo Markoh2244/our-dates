@@ -5,21 +5,21 @@ function getSupabaseUrl(): string | undefined {
   return process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 }
 
-function getServiceRoleKey(): string | undefined {
+function getSupabaseSecretKey(): string | undefined {
   return (
+    process.env.SUPABASE_SECRET_KEY ||
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SERVICE_KEY ||
-    process.env.SUPABASE_SECRET_KEY
+    process.env.SUPABASE_SERVICE_KEY
   );
 }
 
 export function isCloudConfigured(): boolean {
-  return Boolean(getSupabaseUrl() && getServiceRoleKey() && isCalendarAuthConfigured());
+  return Boolean(getSupabaseUrl() && getSupabaseSecretKey() && isCalendarAuthConfigured());
 }
 
 export function getServiceSupabase(): SupabaseClient {
   const url = getSupabaseUrl();
-  const key = getServiceRoleKey();
+  const key = getSupabaseSecretKey();
 
   if (!url || !key) {
     throw new Error('Supabase is not configured on the server.');
