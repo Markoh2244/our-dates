@@ -18,7 +18,7 @@ import {
 } from '@/lib/cloud';
 import { exportDates, importDates, resetToDefaults, saveDates } from '@/lib/storage';
 import { compareEventsBySchedule, formatEventSchedule, formatTimeRange } from '@/lib/time-format';
-import { CrossIcon, IchthysIcon } from './ChristianIcons';
+import { CrossIcon } from './ChristianIcons';
 import { ScriptureBanner } from './ScriptureBanner';
 
 type FilterSeason = Season | 'all';
@@ -445,14 +445,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
       </div>
 
       <div className="relative z-1 mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <ScriptureBanner />
-
         <header className="mb-8 text-center">
-          <div className="mb-4 flex items-center justify-center gap-3">
-            <CrossIcon className="text-gold" size={28} />
-            <IchthysIcon className="text-gold opacity-80" size={24} />
-            <CrossIcon className="text-gold" size={28} />
-          </div>
           <div className="mb-3 flex justify-center">
             <span className="season-badge">
               {SEASON_EMOJI[activeSeason]} {SEASON_LABELS[activeSeason]} — walking together in faith
@@ -467,7 +460,9 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
             gathered here as a testimony of His faithfulness.
           </p>
 
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <ScriptureBanner />
+
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
             <StatPill label="Events" value={stats.total} />
             <StatPill label="Planned" value={stats.planned} accent />
             <StatPill label="Done" value={stats.completed} />
