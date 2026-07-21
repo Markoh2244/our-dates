@@ -1,9 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --rose-deep: #881337;
-  --rose-soft: #fff1f2;
-  --cream: #fffbf7;
+  --ink: #2c1810;
+  --muted: rgba(44, 24, 16, 0.68);
+  --gold: #b8860b;
+  --gold-soft: #f5ecd7;
+  --gold-glow: rgba(184, 134, 11, 0.22);
+  --surface: rgba(255, 252, 245, 0.92);
+  --border: rgba(184, 134, 11, 0.28);
+  --accent: #8b4513;
+  --accent-soft: #faf6ee;
+  --season-soft: #f5ecd7;
+  --season-deep: #5c3d2e;
+  --season-highlight: #b8860b;
+  --season-surface: #fdfbf5;
+  --season-glow: rgba(184, 134, 11, 0.16);
+  --season-glow-2: rgba(139, 69, 19, 0.1);
+  --season-wash: linear-gradient(180deg, #fdfbf5 0%, #faf6ee 45%, #f5ecd7 100%);
 }
 
 @theme inline {
@@ -12,8 +25,8 @@
 }
 
 body {
-  background: var(--cream);
-  color: #4c0519;
+  background: var(--season-surface);
+  color: var(--ink);
 }
 
 .font-serif {
@@ -23,14 +36,95 @@ body {
 .romantic-bg {
   position: relative;
   overflow-x: hidden;
+  min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(251, 113, 133, 0.18), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(244, 114, 182, 0.1), transparent),
-    radial-gradient(ellipse 60% 40% at 0% 80%, rgba(251, 191, 36, 0.08), transparent),
-    linear-gradient(180deg, #fff7f9 0%, #fffbf7 40%, #fff1f2 100%);
+    radial-gradient(ellipse 70% 42% at 50% -5%, var(--gold-glow), transparent 58%),
+    radial-gradient(ellipse 50% 35% at 100% 30%, var(--season-glow-2), transparent 52%),
+    radial-gradient(ellipse 50% 35% at 0% 70%, var(--season-glow), transparent 52%),
+    var(--season-wash);
+  transition: background 0.7s ease;
 }
 
-.floating-hearts {
+.text-gold {
+  color: var(--gold);
+}
+
+.scripture-banner {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 2rem;
+  border-radius: 1.25rem;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(135deg, rgba(255, 252, 245, 0.97), rgba(245, 236, 215, 0.92)),
+    radial-gradient(circle at top right, var(--gold-glow), transparent 55%);
+  padding: 1.75rem 1.5rem 1.5rem;
+  box-shadow:
+    0 12px 40px rgba(44, 24, 16, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  text-align: center;
+}
+
+.scripture-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+  border-radius: 0.9rem;
+  pointer-events: none;
+}
+
+.scripture-banner__icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-bottom: 1rem;
+  color: var(--gold);
+  opacity: 0.85;
+}
+
+.scripture-banner__ornament {
+  position: absolute;
+  top: 50%;
+  color: var(--gold);
+  opacity: 0.35;
+  transform: translateY(-50%);
+}
+
+.scripture-banner__ornament--left {
+  left: 0.75rem;
+  transform: translateY(-50%) scaleX(-1);
+}
+
+.scripture-banner__ornament--right {
+  right: 0.75rem;
+}
+
+.scripture-banner__text {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto;
+  max-width: 52rem;
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--ink);
+  font-style: italic;
+}
+
+.scripture-banner__ref {
+  position: relative;
+  z-index: 1;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.floating-crosses {
   pointer-events: none;
   position: fixed;
   inset: 0;
@@ -38,126 +132,256 @@ body {
   z-index: 0;
 }
 
-.heart {
+.floating-cross {
   position: absolute;
-  width: 12px;
-  height: 12px;
-  background: rgba(251, 113, 133, 0.15);
-  transform: rotate(45deg);
-  animation: float-up 18s linear infinite;
-  animation-delay: calc(var(--i) * -1.5s);
-  left: calc(var(--i) * 8.5%);
-  bottom: -20px;
+  font-size: 0.85rem;
+  color: color-mix(in srgb, var(--gold) 28%, transparent);
+  animation: cross-rise 22s linear infinite;
+  animation-delay: calc(var(--i) * -2.2s);
+  left: calc(var(--i) * 12.5%);
+  bottom: -24px;
 }
 
-.heart::before,
-.heart::after {
-  content: '';
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  background: inherit;
-  border-radius: 50%;
-}
-
-.heart::before {
-  top: -6px;
-  left: 0;
-}
-
-.heart::after {
-  top: 0;
-  left: -6px;
-}
-
-@keyframes float-up {
+@keyframes cross-rise {
   0% {
-    transform: rotate(45deg) translateY(0);
+    transform: translateY(0) rotate(0deg);
     opacity: 0;
   }
   10% {
-    opacity: 1;
+    opacity: 0.7;
   }
   90% {
-    opacity: 0.6;
+    opacity: 0.35;
   }
   100% {
-    transform: rotate(45deg) translateY(-110vh);
+    transform: translateY(-110vh) rotate(8deg);
     opacity: 0;
   }
+}
+
+.season-scene {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  animation: season-arrive 650ms ease-out both;
+}
+
+.season-particle {
+  position: absolute;
+  left: calc(var(--i) * 8.4%);
+  top: calc(6% + var(--i) * 6%);
+  width: 1.15rem;
+  height: 1.15rem;
+  opacity: 0.26;
+  animation: season-drift calc(9s + var(--i) * 0.45s) ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -0.5s);
+}
+
+.season-scene-spring .season-particle {
+  border-radius: 70% 30% 65% 35%;
+  background: #f9a8d4;
+  transform: rotate(35deg);
+}
+
+.season-scene-summer .season-particle {
+  border-radius: 50%;
+  background: radial-gradient(circle, #fef08a 0 32%, #fb923c 34% 53%, transparent 55%);
+  box-shadow: 0 0 18px rgba(251, 146, 60, 0.42);
+}
+
+.season-scene-fall .season-particle {
+  width: 0.95rem;
+  height: 1.3rem;
+  border-radius: 100% 0 100% 0;
+  background: linear-gradient(135deg, #f59e0b, #b45309);
+  transform: rotate(30deg);
+}
+
+.season-scene-winter .season-particle {
+  background:
+    linear-gradient(#bfdbfe, #bfdbfe) center / 100% 2px no-repeat,
+    linear-gradient(#bfdbfe, #bfdbfe) center / 2px 100% no-repeat;
+  transform: rotate(45deg);
+}
+
+@keyframes season-arrive {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes season-drift {
+  from {
+    translate: -1rem -0.5rem;
+    rotate: -12deg;
+  }
+  to {
+    translate: 1rem 1rem;
+    rotate: 18deg;
+  }
+}
+
+/* Seasonal themes — distinct, Christ-centered warmth */
+.season-theme-spring {
+  --ink: #3d2a1f;
+  --muted: rgba(61, 42, 31, 0.72);
+  --accent: #6b8e4e;
+  --accent-soft: #f4f8ef;
+  --border: rgba(107, 142, 78, 0.32);
+  --season-soft: #eef5e6;
+  --season-deep: #4a5f38;
+  --season-highlight: #8fbc6a;
+  --season-surface: #fbfdf8;
+  --season-glow: rgba(143, 188, 106, 0.22);
+  --season-glow-2: rgba(184, 134, 11, 0.14);
+  --season-wash: linear-gradient(180deg, #fbfdf8 0%, #f4f8ef 42%, #eef5e6 100%);
+}
+
+.season-theme-summer {
+  --ink: #4a3018;
+  --muted: rgba(74, 48, 24, 0.72);
+  --accent: #c17f24;
+  --accent-soft: #fdf6e8;
+  --border: rgba(193, 127, 36, 0.35);
+  --season-soft: #faecd0;
+  --season-deep: #7a4f1a;
+  --season-highlight: #daa520;
+  --season-surface: #fffbf2;
+  --season-glow: rgba(218, 165, 32, 0.28);
+  --season-glow-2: rgba(255, 200, 100, 0.18);
+  --season-wash: linear-gradient(180deg, #fff8eb 0%, #fffbf2 40%, #faecd0 100%);
+}
+
+.season-theme-fall {
+  --ink: #3d2418;
+  --muted: rgba(61, 36, 24, 0.72);
+  --accent: #a0522d;
+  --accent-soft: #faf0e6;
+  --border: rgba(160, 82, 45, 0.32);
+  --season-soft: #f5e6d3;
+  --season-deep: #6b3a1f;
+  --season-highlight: #cd853f;
+  --season-surface: #fdf8f2;
+  --season-glow: rgba(205, 133, 63, 0.24);
+  --season-glow-2: rgba(139, 69, 19, 0.14);
+  --season-wash: linear-gradient(180deg, #faf0e6 0%, #fdf8f2 45%, #f5e6d3 100%);
+}
+
+.season-theme-winter {
+  --ink: #1e2a3a;
+  --muted: rgba(30, 42, 58, 0.72);
+  --accent: #4a6fa5;
+  --accent-soft: #eef3fa;
+  --border: rgba(74, 111, 165, 0.35);
+  --season-soft: #dce6f2;
+  --season-deep: #2c4260;
+  --season-highlight: #7ba7d7;
+  --season-surface: #f7fafd;
+  --season-glow: rgba(123, 167, 215, 0.22);
+  --season-glow-2: rgba(184, 134, 11, 0.1);
+  --season-wash: linear-gradient(180deg, #eef3fa 0%, #f7fafd 42%, #dce6f2 100%);
+}
+
+.panel {
+  position: relative;
+  z-index: 1;
+  border-radius: 1.25rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow:
+    0 10px 32px rgba(44, 24, 16, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+}
+
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 1.25rem;
+  right: 1.25rem;
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  opacity: 0.55;
 }
 
 .date-card {
   position: relative;
   z-index: 1;
   border-radius: 1rem;
-  border: 1px solid rgba(251, 113, 133, 0.15);
-  background: rgba(255, 255, 255, 0.85);
-  padding: 1.25rem;
-  box-shadow: 0 4px 24px rgba(136, 19, 55, 0.06);
-  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 1.15rem 1.2rem;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .date-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(136, 19, 55, 0.1);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
 }
 
 .input {
   width: 100%;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(251, 113, 133, 0.25);
+  border-radius: 0.8rem;
+  border: 1px solid var(--border);
   background: #fff;
-  padding: 0.625rem 0.875rem;
+  padding: 0.65rem 0.85rem;
   font-size: 0.875rem;
-  color: #4c0519;
+  color: var(--ink);
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .input:focus {
-  border-color: #fb7185;
-  box-shadow: 0 0 0 3px rgba(251, 113, 133, 0.15);
+  border-color: var(--season-highlight);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--season-highlight) 22%, white);
 }
 
 .btn-primary {
   border-radius: 9999px;
-  background: linear-gradient(135deg, #fb7185, #e11d48);
-  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, var(--season-highlight), var(--accent));
+  padding: 0.625rem 1.2rem;
   font-size: 0.875rem;
   font-weight: 600;
   color: white;
-  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.25);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 28%, transparent);
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.35);
 }
 
 .btn-secondary {
   border-radius: 9999px;
-  border: 1px solid rgba(251, 113, 133, 0.3);
+  border: 1px solid var(--border);
   background: white;
-  padding: 0.625rem 1.25rem;
+  padding: 0.625rem 1.2rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #be123c;
+  color: var(--season-deep);
   transition: background 0.15s;
 }
 
 .btn-secondary:hover {
-  background: #fff1f2;
+  background: var(--accent-soft);
 }
 
 .btn-ghost {
   border-radius: 9999px;
-  padding: 0.625rem 1.25rem;
+  padding: 0.625rem 1.1rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #9f1239;
+  color: var(--season-deep);
   opacity: 0.7;
 }
 
@@ -167,20 +391,20 @@ body {
 
 .btn-small {
   border-radius: 9999px;
-  border: 1px solid rgba(251, 113, 133, 0.25);
+  border: 1px solid var(--border);
   background: white;
-  padding: 0.375rem 0.75rem;
+  padding: 0.35rem 0.75rem;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #be123c;
+  color: var(--season-deep);
 }
 
 .btn-small:hover {
-  background: #fff1f2;
+  background: var(--accent-soft);
 }
 
 .btn-success {
-  border-color: rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.35);
   color: #047857;
 }
 
@@ -195,4 +419,274 @@ body {
 
 .btn-danger:hover {
   background: #fef2f2;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.calendar-weekday {
+  border-radius: 0.7rem;
+  background: var(--season-soft);
+  padding: 0.45rem;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--season-deep);
+}
+
+.calendar-day {
+  min-height: 8.4rem;
+  border-radius: 0.85rem;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--season-surface) 88%, white);
+  padding: 0.4rem;
+}
+
+.calendar-day--muted {
+  opacity: 0.35;
+}
+
+.calendar-day--today {
+  border-color: var(--season-highlight);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--season-highlight) 35%, white);
+}
+
+.calendar-day__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--season-deep);
+}
+
+.calendar-add {
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  width: 1.15rem;
+  height: 1.15rem;
+  line-height: 1;
+  font-size: 0.85rem;
+  color: var(--season-deep);
+  background: #fff;
+}
+
+.calendar-day__events {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.calendar-event {
+  width: 100%;
+  border-radius: 0.4rem;
+  border: 1px solid transparent;
+  padding: 0.18rem 0.3rem;
+  text-align: left;
+  font-size: 0.66rem;
+  line-height: 1.15;
+  font-weight: 600;
+}
+
+.calendar-event:hover {
+  filter: brightness(0.97);
+}
+
+.calendar-more {
+  font-size: 0.66rem;
+  color: var(--season-deep);
+  padding-left: 0.2rem;
+}
+
+.event-card {
+  border-left-width: 4px;
+  border-left-style: solid;
+}
+
+.event-type-chip {
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.event-type-service {
+  background: #e0f2fe;
+  color: #0c4a6e;
+  border-color: #7dd3fc;
+}
+
+.event-type-walk {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+.event-type-adventure {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.event-type-family {
+  background: #ede9fe;
+  color: #5b21b6;
+  border-color: #c4b5fd;
+}
+
+.event-type-food {
+  background: #fee2e2;
+  color: #9f1239;
+  border-color: #fca5a5;
+}
+
+.event-type-travel {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.event-type-learning {
+  background: #e0e7ff;
+  color: #3730a3;
+  border-color: #a5b4fc;
+}
+
+.event-type-milestone {
+  background: #fce7f3;
+  color: #9d174d;
+  border-color: #f9a8d4;
+}
+
+.event-type-faith {
+  background: #ecfccb;
+  color: #3f6212;
+  border-color: #bef264;
+}
+
+.event-type-cozy {
+  background: #fff1f2;
+  color: #9f1239;
+  border-color: #fda4af;
+}
+
+.event-card.event-type-service,
+.calendar-event.event-type-service {
+  border-left-color: #38bdf8;
+}
+
+.event-card.event-type-walk,
+.calendar-event.event-type-walk {
+  border-left-color: #4ade80;
+}
+
+.event-card.event-type-adventure,
+.calendar-event.event-type-adventure {
+  border-left-color: #fbbf24;
+}
+
+.event-card.event-type-family,
+.calendar-event.event-type-family {
+  border-left-color: #a78bfa;
+}
+
+.event-card.event-type-food,
+.calendar-event.event-type-food {
+  border-left-color: #fb7185;
+}
+
+.event-card.event-type-travel,
+.calendar-event.event-type-travel {
+  border-left-color: #60a5fa;
+}
+
+.event-card.event-type-learning,
+.calendar-event.event-type-learning {
+  border-left-color: #818cf8;
+}
+
+.event-card.event-type-milestone,
+.calendar-event.event-type-milestone {
+  border-left-color: #f472b6;
+}
+
+.event-card.event-type-faith,
+.calendar-event.event-type-faith {
+  border-left-color: #a3e635;
+}
+
+.event-card.event-type-cozy,
+.calendar-event.event-type-cozy {
+  border-left-color: #fb7185;
+}
+
+.season-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: var(--season-soft);
+  color: var(--season-deep);
+  padding: 0.35rem 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 8px rgba(44, 24, 16, 0.04);
+}
+
+.text-ink {
+  color: var(--ink);
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+@media (max-width: 768px) {
+  .scripture-banner {
+    padding: 1.25rem 1rem 1rem;
+  }
+
+  .scripture-banner__ornament {
+    display: none;
+  }
+
+  .scripture-banner__text {
+    font-size: 0.95rem;
+    line-height: 1.65;
+  }
+
+  .calendar-grid {
+    gap: 0.3rem;
+  }
+
+  .calendar-day {
+    min-height: 6.2rem;
+    padding: 0.28rem;
+  }
+
+  .calendar-event {
+    font-size: 0.6rem;
+  }
 }

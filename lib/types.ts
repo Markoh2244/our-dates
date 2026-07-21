@@ -1,6 +1,17 @@
 export type Season = 'spring' | 'summer' | 'fall' | 'winter' | 'anytime';
 
 export type DateStatus = 'wishlist' | 'planned' | 'completed';
+export type EventType =
+  | 'service'
+  | 'walk'
+  | 'adventure'
+  | 'family'
+  | 'food'
+  | 'travel'
+  | 'learning'
+  | 'milestone'
+  | 'faith'
+  | 'cozy';
 
 export interface DateIdea {
   id: string;
@@ -8,7 +19,12 @@ export interface DateIdea {
   description: string;
   season: Season;
   status: DateStatus;
-  notes?: string;
+  eventType: EventType;
+  address?: string;
+  livNote?: string;
+  markoNote?: string;
+  imageDataUrl?: string;
+  imageName?: string;
   plannedFor?: string;
 }
 
@@ -32,4 +48,17 @@ export const STATUS_LABELS: Record<DateStatus, string> = {
   wishlist: 'Wishlist',
   planned: 'Planned',
   completed: 'Completed',
+};
+
+export const EVENT_TYPE_LABELS: Record<EventType, string> = {
+  service: 'Service',
+  walk: 'Walk',
+  adventure: 'Adventure',
+  family: 'Family Time',
+  food: 'Food / Cafe',
+  travel: 'Travel',
+  learning: 'Learning',
+  milestone: 'Milestone',
+  faith: 'Faith',
+  cozy: 'Cozy Time',
 };

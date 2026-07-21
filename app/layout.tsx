@@ -15,8 +15,9 @@ const sans = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: 'Our Date Adventures',
-  description: 'A romantic list of dates and adventures to share together.',
+  title: 'Liv & Marko | Our Memory Calendar',
+  description:
+    'A Christ-centered memory calendar for Liv and Marko — dates, places, photos, and notes rooted in love.',
 };
 
 export default function RootLayout({
