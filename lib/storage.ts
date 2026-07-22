@@ -1,11 +1,12 @@
 import { DEFAULT_DATES } from './default-dates';
+import { withAssignedSlugs } from './event-slug';
 import { DateIdea } from './types';
 
 const STORAGE_KEY = 'our-dates-v2';
 const MAX_IMAGE_DATA_URL_LENGTH = 2_000_000;
 
 function normalizeDates(value: unknown): DateIdea[] {
-  if (!Array.isArray(value)) return DEFAULT_DATES;
+  if (!Array.isArray(value)) return withAssignedSlugs(DEFAULT_DATES);
 
   const normalized = value
     .map((item): DateIdea | null => {
@@ -29,6 +30,7 @@ function normalizeDates(value: unknown): DateIdea[] {
         title: String(raw.title),
         description: String(raw.description),
         schedule: typeof raw.schedule === 'string' ? raw.schedule : undefined,
+        slug: typeof raw.slug === 'string' ? raw.slug : undefined,
         season: raw.season,
         status: raw.status,
         eventType: raw.eventType ?? 'cozy',
@@ -45,19 +47,19 @@ function normalizeDates(value: unknown): DateIdea[] {
     })
     .filter((item): item is DateIdea => Boolean(item));
 
-  return normalized.length > 0 ? normalized : DEFAULT_DATES;
+  return normalized.length > 0 ? withAssignedSlugs(normalized) : withAssignedSlugs(DEFAULT_DATES);
 }
 
 export function loadDates(): DateIdea[] {
-  if (typeof window === 'undefined') return DEFAULT_DATES;
+  if (typeof window === 'undefined') return withAssignedSlugs(DEFAULT_DATES);
 
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULT_DATES;
+    if (!raw) return withAssignedSlugs(DEFAULT_DATES);
     const parsed = JSON.parse(raw);
     return normalizeDates(parsed);
   } catch {
-    return DEFAULT_DATES;
+    return withAssignedSlugs(DEFAULT_DATES);
   }
 }
 
@@ -80,5 +82,5 @@ export function importDates(json: string): DateIdea[] {
 
 export function resetToDefaults(): DateIdea[] {
   localStorage.removeItem(STORAGE_KEY);
-  return DEFAULT_DATES;
+  return withAssignedSlugs(DEFAULT_DATES);
 }

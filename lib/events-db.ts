@@ -6,6 +6,7 @@ type EventRow = {
   title: string;
   description: string;
   schedule: string | null;
+  slug: string | null;
   season: Season;
   status: DateStatus;
   event_type: EventType;
@@ -26,6 +27,7 @@ function toIdea(row: EventRow): DateIdea {
     title: row.title,
     description: row.description,
     schedule: row.schedule ?? undefined,
+    slug: row.slug ?? undefined,
     season: row.season,
     status: row.status,
     eventType: row.event_type ?? 'cozy',
@@ -47,6 +49,7 @@ function toRow(idea: DateIdea): EventRow {
     title: idea.title,
     description: idea.description,
     schedule: idea.schedule ?? null,
+    slug: idea.slug ?? null,
     season: idea.season,
     status: idea.status,
     event_type: idea.eventType,
@@ -76,6 +79,15 @@ export async function listEvents(): Promise<DateIdea[]> {
 export async function getEventById(id: string): Promise<DateIdea | null> {
   const supabase = getServiceSupabase();
   const { data, error } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return toIdea(data as EventRow);
+}
+
+export async function getEventBySlug(slug: string): Promise<DateIdea | null> {
+  const supabase = getServiceSupabase();
+  const { data, error } = await supabase.from('events').select('*').eq('slug', slug).maybeSingle();
 
   if (error) throw new Error(error.message);
   if (!data) return null;

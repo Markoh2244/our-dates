@@ -17,6 +17,7 @@ import {
   uploadCloudPhoto,
 } from '@/lib/cloud';
 import { exportDates, importDates, resetToDefaults, saveDates } from '@/lib/storage';
+import { assignUniqueSlug, eventSharePath, withAssignedSlugs } from '@/lib/event-slug';
 import { compareEventsBySchedule, formatEventSchedule, formatTimeRange } from '@/lib/time-format';
 import { CrossIcon } from './ChristianIcons';
 import { ScriptureBanner } from './ScriptureBanner';
@@ -106,7 +107,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
       const hydrated = await hydrateCalendar(shareToken);
       if (cancelled) return;
 
-      setDates(hydrated.events);
+      setDates(withAssignedSlugs(hydrated.events));
       setCloudEnabled(hydrated.cloudEnabled);
       setCloudUnlocked(hydrated.cloudUnlocked);
 
@@ -289,7 +290,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
     if (!form.title.trim() || savingEvent) return;
 
     const eventId = editingId ?? crypto.randomUUID();
-    let payload: DateIdea = {
+    const draft: DateIdea = {
       id: eventId,
       title: form.title.trim(),
       description: form.description.trim(),
@@ -307,6 +308,13 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
       imageDataUrl: optionalText(form.imageDataUrl),
       imageName: optionalText(form.imageName),
     };
+    // Keep an existing share slug stable; only mint one for new/missing events
+    const existing = dates.find((d) => d.id === eventId);
+    draft.slug = existing?.slug
+      ? existing.slug
+      : assignUniqueSlug({ ...draft, slug: undefined }, dates.filter((d) => d.id !== eventId));
+
+    let payload: DateIdea = draft;
 
     let nextDates: DateIdea[];
     if (editingId) {
@@ -904,7 +912,6 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
                 <EventCard
                   key={event.id}
                   event={event}
-                  shareToken={shareToken}
                   editMode={editMode}
                   onEdit={() => openEditForm(event)}
                   onDelete={() => handleDelete(event.id)}
@@ -929,7 +936,6 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
                 <EventCard
                   key={event.id}
                   event={event}
-                  shareToken={shareToken}
                   editMode={editMode}
                   onEdit={() => openEditForm(event)}
                   onDelete={() => handleDelete(event.id)}
@@ -959,7 +965,6 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
 
 function EventCard({
   event,
-  shareToken,
   editMode,
   onEdit,
   onDelete,
@@ -967,7 +972,6 @@ function EventCard({
   onMarkDone,
 }: {
   event: DateIdea;
-  shareToken: string;
   editMode: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -975,7 +979,7 @@ function EventCard({
   onMarkDone: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const eventHref = `/c/${shareToken}/e/${event.id}`;
+  const eventHref = eventSharePath(event);
 
   const copyShareLink = async () => {
     const url = `${window.location.origin}${eventHref}`;

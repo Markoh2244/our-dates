@@ -19,6 +19,8 @@ export interface DateIdea {
   description: string;
   /** Timed plan / itinerary for the day */
   schedule?: string;
+  /** Shareable path segment, e.g. "07252026themet" */
+  slug?: string;
   season: Season;
   status: DateStatus;
   eventType: EventType;

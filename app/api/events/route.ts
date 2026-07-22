@@ -3,6 +3,7 @@ import { isCloudConfigured, verifyAccessCode } from '@/lib/supabase-server';
 import { getTokenFromRequest } from '@/lib/calendar-auth';
 import { listEvents, replaceAllEvents } from '@/lib/events-db';
 import { DEFAULT_DATES } from '@/lib/default-dates';
+import { withAssignedSlugs } from '@/lib/event-slug';
 import { DateIdea } from '@/lib/types';
 
 function unauthorized() {
@@ -12,7 +13,7 @@ function unauthorized() {
 function upgradeKnownEvents(events: DateIdea[]): { events: DateIdea[]; changed: boolean } {
   let changed = false;
 
-  const upgraded = events.map((event) => {
+  const withTimes = events.map((event) => {
     const seed = DEFAULT_DATES.find((item) => item.id === event.id);
     if (!seed) return event;
 
@@ -34,7 +35,12 @@ function upgradeKnownEvents(events: DateIdea[]): { events: DateIdea[]; changed: 
     return next;
   });
 
-  return { events: upgraded, changed };
+  const withSlugs = withAssignedSlugs(withTimes);
+  if (withSlugs.some((event, i) => event.slug !== withTimes[i]?.slug)) {
+    changed = true;
+  }
+
+  return { events: withSlugs, changed };
 }
 
 export async function GET(request: NextRequest) {
@@ -54,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     // First-time setup: seed our hardcoded timeline once
     if (events.length === 0) {
-      events = await replaceAllEvents(DEFAULT_DATES);
+      events = await replaceAllEvents(withAssignedSlugs(DEFAULT_DATES));
     } else {
       const upgraded = upgradeKnownEvents(events);
       if (upgraded.changed) {
