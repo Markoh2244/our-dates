@@ -35,6 +35,15 @@ export function eventSharePath(event: Pick<DateIdea, 'slug' | 'id' | 'title' | '
   return `/${slug}`;
 }
 
+/** Calendar deep-link that opens the event edit form, e.g. /c/{token}/07252026themet */
+export function eventEditPath(
+  shareToken: string,
+  event: Pick<DateIdea, 'slug' | 'id' | 'title' | 'plannedFor'>
+): string {
+  const slug = event.slug || buildEventSlug(event.title, event.plannedFor);
+  return `/c/${shareToken}/${slug}`;
+}
+
 /** Assign a unique slug for this event among the full list. */
 export function assignUniqueSlug(
   event: Pick<DateIdea, 'id' | 'title' | 'plannedFor' | 'slug'>,

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   DateIdea,
   DateStatus,
@@ -17,7 +18,13 @@ import {
   uploadCloudPhoto,
 } from '@/lib/cloud';
 import { exportDates, importDates, resetToDefaults, saveDates } from '@/lib/storage';
-import { assignUniqueSlug, eventSharePath, withAssignedSlugs } from '@/lib/event-slug';
+import {
+  assignUniqueSlug,
+  buildEventSlug,
+  eventEditPath,
+  eventSharePath,
+  withAssignedSlugs,
+} from '@/lib/event-slug';
 import { compareEventsBySchedule, formatEventSchedule, formatTimeRange } from '@/lib/time-format';
 import { CrossIcon } from './ChristianIcons';
 import { ScriptureBanner } from './ScriptureBanner';
@@ -77,7 +84,14 @@ const emptyForm = (): DateFormState => ({
   imageName: '',
 });
 
-export function DateBoard({ shareToken }: { shareToken: string }) {
+export function DateBoard({
+  shareToken,
+  openSlug,
+}: {
+  shareToken: string;
+  openSlug?: string;
+}) {
+  const router = useRouter();
   const [dates, setDates] = useState<DateIdea[]>([]);
   const [ready, setReady] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -94,11 +108,22 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
   const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const skipNextCloudSave = useRef(true);
+  const openedSlugRef = useRef<string | null>(null);
   const [monthCursor, setMonthCursor] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
+
+  const setCalendarUrl = (event?: DateIdea | null) => {
+    const base = `/c/${shareToken}`;
+    if (!event) {
+      router.replace(base, { scroll: false });
+      return;
+    }
+    router.replace(eventEditPath(shareToken, event), { scroll: false });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -249,6 +274,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
     setPendingPhotoFile(null);
     setForm(emptyForm());
     setShowForm(true);
+    setCalendarUrl(null);
   };
 
   const openPlanForm = (isoDate: string) => {
@@ -260,6 +286,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
       status: 'planned',
     });
     setShowForm(true);
+    setCalendarUrl(null);
   };
 
   const openEditForm = (date: DateIdea) => {
@@ -283,7 +310,33 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
       imageName: date.imageName ?? '',
     });
     setShowForm(true);
+    setCalendarUrl(date);
+    if (date.plannedFor) {
+      const planned = new Date(`${date.plannedFor}T12:00:00`);
+      setMonthCursor(new Date(planned.getFullYear(), planned.getMonth(), 1));
+    }
+    window.setTimeout(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setPendingPhotoFile(null);
+    setCalendarUrl(null);
+  };
+
+  useEffect(() => {
+    if (!ready || !openSlug || openedSlugRef.current === openSlug) return;
+    const match = dates.find(
+      (item) =>
+        item.slug === openSlug || buildEventSlug(item.title, item.plannedFor) === openSlug
+    );
+    if (!match) return;
+    openedSlugRef.current = openSlug;
+    openEditForm(match);
+  }, [ready, openSlug, dates]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -340,10 +393,8 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
       }
 
       setDates(nextDates);
-      setShowForm(false);
-      setEditingId(null);
-      setPendingPhotoFile(null);
       setForm(emptyForm());
+      closeForm();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not save event';
       setSyncMessage(message);
@@ -567,7 +618,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
         </div>
 
         {showForm && (
-          <form onSubmit={handleSubmit} className="mb-6 panel p-5 sm:p-6">
+          <form ref={formRef} onSubmit={handleSubmit} className="mb-6 panel p-5 sm:p-6">
             <h2 className="mb-4 font-serif text-2xl text-ink">
               {editingId ? 'Edit event' : 'Add a new event'}
             </h2>
@@ -789,11 +840,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setEditingId(null);
-                  setPendingPhotoFile(null);
-                }}
+                onClick={closeForm}
                 className="btn-secondary"
               >
                 Cancel
@@ -912,6 +959,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
                 <EventCard
                   key={event.id}
                   event={event}
+                  shareToken={shareToken}
                   editMode={editMode}
                   onEdit={() => openEditForm(event)}
                   onDelete={() => handleDelete(event.id)}
@@ -936,6 +984,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
                 <EventCard
                   key={event.id}
                   event={event}
+                  shareToken={shareToken}
                   editMode={editMode}
                   onEdit={() => openEditForm(event)}
                   onDelete={() => handleDelete(event.id)}
@@ -965,6 +1014,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
 
 function EventCard({
   event,
+  shareToken,
   editMode,
   onEdit,
   onDelete,
@@ -972,6 +1022,7 @@ function EventCard({
   onMarkDone,
 }: {
   event: DateIdea;
+  shareToken: string;
   editMode: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -979,10 +1030,11 @@ function EventCard({
   onMarkDone: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const eventHref = eventSharePath(event);
+  const editHref = eventEditPath(shareToken, event);
+  const viewHref = eventSharePath(event);
 
-  const copyShareLink = async () => {
-    const url = `${window.location.origin}${eventHref}`;
+  const copyEditLink = async () => {
+    const url = `${window.location.origin}${editHref}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -996,9 +1048,9 @@ function EventCard({
     <article className={`date-card event-card event-type-${event.eventType}`}>
       <div className="mb-2 flex items-start justify-between gap-2">
         <h4 className="font-serif text-lg text-ink">
-          <a href={eventHref} className="event-title-link">
+          <button type="button" onClick={onEdit} className="event-title-link text-left">
             {event.title}
-          </a>
+          </button>
         </h4>
         <StatusBadge status={event.status} />
       </div>
@@ -1054,15 +1106,15 @@ function EventCard({
       )}
 
       <div className="mt-4 flex flex-wrap gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
-        <a href={eventHref} className="btn-small">
-          Open
-        </a>
-        <button type="button" className="btn-small" onClick={copyShareLink}>
-          {copied ? 'Link copied' : 'Share'}
-        </button>
         <button type="button" className="btn-small" onClick={onEdit}>
           Edit
         </button>
+        <button type="button" className="btn-small" onClick={copyEditLink}>
+          {copied ? 'Link copied' : 'Copy edit link'}
+        </button>
+        <a href={viewHref} className="btn-small" target="_blank" rel="noreferrer">
+          View page
+        </a>
         {!editMode && event.status !== 'planned' && (
           <button type="button" className="btn-small" onClick={onMarkPlanned}>
             Mark planned
