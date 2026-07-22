@@ -17,6 +17,8 @@ export interface DateIdea {
   id: string;
   title: string;
   description: string;
+  /** Timed plan / itinerary for the day */
+  schedule?: string;
   season: Season;
   status: DateStatus;
   eventType: EventType;

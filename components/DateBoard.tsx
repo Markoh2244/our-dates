@@ -43,6 +43,7 @@ const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 type DateFormState = {
   title: string;
   description: string;
+  schedule: string;
   season: Season;
   status: DateStatus;
   eventType: EventType;
@@ -60,6 +61,7 @@ type DateFormState = {
 const emptyForm = (): DateFormState => ({
   title: '',
   description: '',
+  schedule: '',
   season: 'anytime',
   status: 'wishlist',
   eventType: 'cozy',
@@ -265,6 +267,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
     setForm({
       title: date.title,
       description: date.description,
+      schedule: date.schedule ?? '',
       season: date.season,
       status: date.status,
       eventType: date.eventType,
@@ -290,6 +293,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
       id: eventId,
       title: form.title.trim(),
       description: form.description.trim(),
+      schedule: optionalText(form.schedule),
       season: form.season,
       status: form.status,
       eventType: form.eventType,
@@ -455,7 +459,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
             Liv + Marko
           </p>
           <h1 className="font-serif text-4xl text-ink sm:text-5xl">Our Memory Calendar</h1>
-          <p className="mx-auto mt-3 max-w-2xl text-base text-muted">
+          <p className="mx-auto mt-3 max-w-2xl font-serif text-lg italic text-muted">
             We are building our story on Christ&apos;s love — our dates, places, photos, and notes
             gathered here as a testimony of His faithfulness.
           </p>
@@ -576,8 +580,20 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                  className="input min-h-24"
-                  placeholder="What happened and why this mattered to us"
+                  className="input input-memory"
+                  rows={10}
+                  placeholder="What happened and why this mattered to us — the feelings, the laughter, the little details we never want to forget"
+                />
+              </label>
+
+              <label className="block sm:col-span-2">
+                <span className="mb-1 block text-sm font-medium text-ink">Schedule</span>
+                <textarea
+                  value={form.schedule}
+                  onChange={(e) => setForm((prev) => ({ ...prev, schedule: e.target.value }))}
+                  className="input input-schedule"
+                  rows={10}
+                  placeholder={'17:00, Boat ride @ the Central Park Boat House\n18:00, Dinner — options below\nA. Sala Thai\nB. La Pecora Bianca UWS'}
                 />
               </label>
 
@@ -888,6 +904,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
                 <EventCard
                   key={event.id}
                   event={event}
+                  shareToken={shareToken}
                   editMode={editMode}
                   onEdit={() => openEditForm(event)}
                   onDelete={() => handleDelete(event.id)}
@@ -912,6 +929,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
                 <EventCard
                   key={event.id}
                   event={event}
+                  shareToken={shareToken}
                   editMode={editMode}
                   onEdit={() => openEditForm(event)}
                   onDelete={() => handleDelete(event.id)}
@@ -941,6 +959,7 @@ export function DateBoard({ shareToken }: { shareToken: string }) {
 
 function EventCard({
   event,
+  shareToken,
   editMode,
   onEdit,
   onDelete,
@@ -948,16 +967,35 @@ function EventCard({
   onMarkDone,
 }: {
   event: DateIdea;
+  shareToken: string;
   editMode: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onMarkPlanned: () => void;
   onMarkDone: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
+  const eventHref = `/c/${shareToken}/e/${event.id}`;
+
+  const copyShareLink = async () => {
+    const url = `${window.location.origin}${eventHref}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      window.prompt('Copy this event link:', url);
+    }
+  };
+
   return (
     <article className={`date-card event-card event-type-${event.eventType}`}>
       <div className="mb-2 flex items-start justify-between gap-2">
-        <h4 className="font-serif text-lg text-ink">{event.title}</h4>
+        <h4 className="font-serif text-lg text-ink">
+          <a href={eventHref} className="event-title-link">
+            {event.title}
+          </a>
+        </h4>
         <StatusBadge status={event.status} />
       </div>
 
@@ -968,7 +1006,19 @@ function EventCard({
         )}
       </div>
 
-      <p className="text-sm leading-relaxed text-muted">{event.description}</p>
+      {event.description && (
+        <div className="memory-block">
+          <p className="memory-block__label">Our memory</p>
+          <p className="text-sm leading-relaxed text-muted whitespace-pre-wrap">{event.description}</p>
+        </div>
+      )}
+
+      {event.schedule && (
+        <div className="schedule-block">
+          <p className="schedule-block__label">Schedule</p>
+          <p className="text-sm leading-relaxed text-ink whitespace-pre-wrap">{event.schedule}</p>
+        </div>
+      )}
 
       {event.address && (
         <p className="mt-3 text-sm text-ink">
@@ -1000,6 +1050,12 @@ function EventCard({
       )}
 
       <div className="mt-4 flex flex-wrap gap-2 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+        <a href={eventHref} className="btn-small">
+          Open
+        </a>
+        <button type="button" className="btn-small" onClick={copyShareLink}>
+          {copied ? 'Link copied' : 'Share'}
+        </button>
         <button type="button" className="btn-small" onClick={onEdit}>
           Edit
         </button>

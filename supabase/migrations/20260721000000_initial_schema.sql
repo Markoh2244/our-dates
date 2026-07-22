@@ -6,6 +6,7 @@ create table if not exists public.events (
   id text primary key,
   title text not null,
   description text not null default '',
+  schedule text,
   season text not null default 'anytime',
   status text not null default 'wishlist',
   event_type text not null default 'cozy',

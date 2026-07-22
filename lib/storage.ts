@@ -28,6 +28,7 @@ function normalizeDates(value: unknown): DateIdea[] {
         id: String(raw.id),
         title: String(raw.title),
         description: String(raw.description),
+        schedule: typeof raw.schedule === 'string' ? raw.schedule : undefined,
         season: raw.season,
         status: raw.status,
         eventType: raw.eventType ?? 'cozy',
